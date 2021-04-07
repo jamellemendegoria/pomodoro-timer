@@ -1,9 +1,10 @@
 // Variables
 
-// Constant global variables defining session duration
+// Global variables
 const P_SECONDS = 1500; // Pomdoro - 25 min
 const S_SECONDS = 300; // Short Break - 5 min
 const L_SECONDS = 1200; // Long break - 20 min
+let SECONDS_COUNT = P_SECONDS;
 
 // Grab references to elements and put them in variables
 const session = document.querySelector('.session');
@@ -14,12 +15,12 @@ const pomodoroCount = document.querySelector('.pomodoroCount');
 
 // Set up variables
 const alarm = new Audio('media/alarm.wav');
-let secondCount = P_SECONDS;
 let numPomodoros = 0;
 let isTimerActive = false;
 let hasResetBtn = false;
 let createTimer;
 let resetBtn;
+let elapsedTime;
 
 // Variables representing current session
 let pomodoroSession = true;
@@ -28,11 +29,14 @@ let longSession = false;
 
 // Function Declarations
 
-function displayTimer() {
-  updateTimer();
-  secondCount--;
+function displayTimer(startTime, secondCount) {
+  // Decrement second count by elapsed time since start
+  elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+  secondCount -= elapsedTime;
 
-  if (secondCount < 0) {
+  updateTimer(secondCount);
+
+  if (secondCount == 0) {
     playSound();
 
     clearInterval(createTimer);
@@ -43,18 +47,19 @@ function displayTimer() {
         toggleStartStop();
       }
       switchSession();
-      updateTimer();
+      updateTimer(SECONDS_COUNT);
     }, 500);
   }
 }
 
-function updateTimer() {
+function updateTimer(secondCount) {
+  // Calculate number of minutes and seconds
   let minutes = Math.floor((secondCount % 3600) / 60);
   let seconds = Math.floor(secondCount % 60);
 
-  // Add leading zeroes if less than 10 to match an actual timer
-  let displayMinutes = minutes < 10 ? '0' + minutes : minutes;
-  let displaySeconds = seconds < 10 ? '0' + seconds : seconds;
+  // Add leading zeroes if less than 10
+  let displayMinutes = minutes < 10 ? `0${minutes}` : minutes;
+  let displaySeconds = seconds < 10 ? `0${seconds}` : seconds;
 
   let time = `${displayMinutes}:${displaySeconds}`;
   timer.textContent = time;
@@ -66,7 +71,8 @@ function startTimer() {
     isTimerActive = true;
     toggleReset();
   }
-  createTimer = setInterval(displayTimer, 1000);
+  let startTime = Date.now();
+  createTimer = setInterval(displayTimer, 1000, startTime, SECONDS_COUNT);
   unlockAudio();
   toggleStartStop();
 }
@@ -74,22 +80,26 @@ function startTimer() {
 function stopTimer() {
   alarm.pause();
   clearInterval(createTimer);
+
+  // Subtract elapsed time from secondCount and set it to remaining time
+  SECONDS_COUNT -= elapsedTime;
+
   toggleStartStop();
 }
 
 function resetTimer() {
   clearInterval(createTimer);
 
-  // Rest secondCount to current session's total seconds
+  // Reset second count to current session's total seconds
   if (pomodoroSession) {
-    secondCount = P_SECONDS;
+    SECONDS_COUNT = P_SECONDS;
   } else if (shortSession) {
-    secondCount = S_SECONDS;
+    SECONDS_COUNT = S_SECONDS;
   } else {
-    secondCount = L_SECONDS;
+    SECONDS_COUNT = L_SECONDS;
   }
 
-  displayTimer();
+  displayTimer(Date.now(), SECONDS_COUNT);
 
   if (startStopBtn.textContent == 'Stop') {
     toggleStartStop();
@@ -157,20 +167,20 @@ function switchSession() {
   if (pomodoroSession && numPomodoros < 3) {
     pomodoroSession = false;
     shortSession = true;
-    secondCount = S_SECONDS;
+    SECONDS_COUNT = S_SECONDS;
     numPomodoros++;
     session.textContent = 'Short Break';
   } else if (pomodoroSession && numPomodoros == 3) {
     pomodoroSession = false;
     longSession = true;
-    secondCount = L_SECONDS;
+    SECONDS_COUNT = L_SECONDS;
     numPomodoros++;
     session.textContent = 'Long Break';
   } else {
     pomodoroSession = true;
     shortSession = false;
     longSession = false;
-    secondCount = P_SECONDS;
+    SECONDS_COUNT = P_SECONDS;
 
     if (numPomodoros == 4) {
       numPomodoros = 0;
@@ -189,4 +199,4 @@ startStopBtn.addEventListener('click', startTimer);
 session.textContent = 'Pomodoro';
 pomodoroCount.textContent = numPomodoros;
 
-displayTimer();
+displayTimer(Date.now(), SECONDS_COUNT);
