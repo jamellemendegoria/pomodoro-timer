@@ -36,7 +36,7 @@ function displayTimer(startTime, secondCount) {
 
   updateTimer(secondCount);
 
-  if (secondCount == 0) {
+  if (secondCount <= 0) {
     playSound();
 
     clearInterval(createTimer);
@@ -170,7 +170,7 @@ function switchSession() {
     SECONDS_COUNT = S_SECONDS;
     numPomodoros++;
     session.textContent = 'Short Break';
-  } else if (pomodoroSession && numPomodoros == 3) {
+  } else if (pomodoroSession && numPomodoros === 3) {
     pomodoroSession = false;
     longSession = true;
     SECONDS_COUNT = L_SECONDS;
@@ -182,7 +182,7 @@ function switchSession() {
     longSession = false;
     SECONDS_COUNT = P_SECONDS;
 
-    if (numPomodoros == 4) {
+    if (numPomodoros === 4) {
       numPomodoros = 0;
     }
     session.textContent = 'Pomodoro';
